@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AMC Office Upload Portal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #f8f8f8;
+      color: #000;
+    }
+    .toolbar {
+      max-width: 900px;
+      margin: auto;
+    }
+    .global-controls {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 25px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .global-controls label {
+      font-weight: 600;
+      color: #333;
+    }
+    .global-controls select {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .search input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 25px;
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #fff;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-info {
+      font-size: 15px;
+    }
+    .card-info .code {
+      font-weight: 600;
+    }
+    .card-info .name {
+      color: #666;
+      margin-top: 4px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .btn-upload {
+      background-color: #4e9a4e;
+    }
+    .btn-upload:hover {
+      background-color: #4cae4c;
+    }
+    .btn-download {
+      background-color: #428498;
+    }
+    .btn-download:hover {
+      background-color: #31b0d5;
+    }
+    .btn-combined {
+      margin-top: 30px;
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-combined:hover {
+      background: #333;
+    }
+    select {
+      padding: 6px;
+      font-size: 13px;
+    }
+    .status {
+      font-size: 12px;
+      margin-top: 5px;
+      padding: 5px;
+      border-radius: 3px;
+    }
+    .status.processing {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .report-section {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 30px;
+    }
+    .report-section h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .report-controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .report-controls select {
+      padding: 8px;
+      font-size: 14px;
+    }
+    .btn-report {
+      background-color: #17a2b8;
+      padding: 10px 20px;
+    }
+    .btn-report:hover {
+      background-color: #138496;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <!-- Global Controls -->
+    <div class="global-controls">
+      <!-- Add this button inside the global-controls div -->
+<button class="btn" onclick="window.open('/dashboard', '_blank')" style="background-color: #6c757d; color: white; margin-left: 20px;">
+  Dashboard
+</button>
+
+<button class="btn" onclick="window.open('/attendance', '_blank')" style="background-color: #6c757d; color: white; margin-left: 20px;">
+ attendance
+</button>
+     
+      <label>Select Quarter:</label>
+<select id="globalQuarter">
+  <option value="Q1">Q1</option>
+  <option value="Q2">Q2</option>
+  <option value="Q3">Q3</option>
+  <option value="Q4">Q4</option>
+  <option value="Q5">Q5</option>
+  <option value="Q6">Q6</option>
+  <option value="Q7">Q7</option>
+  <option value="Q8">Q8</option>
+  <option value="Q9">Q9</option>
+  <option value="Q10">Q10</option>
+  <option value="Q11">Q11</option>
+  <option value="Q12">Q12</option>
+</select>
+
+      
+      <span style="margin-left: 20px; color: #666; font-size: 13px;">
+        These settings will be applied to all locations
+      </span>
+
+      <button class="btn" onclick="logout()" style="background-color: #dc3545; color: white; margin-left: auto;">
+  Logout
+</button>
+
+    </div>
+
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Search offices by name or code..." oninput="filterOffices()" />
+    </div>
+    <div id="officeList"></div>
+
+
+
+    <div class="report-section">
+     
+<button class="btn-combined" onclick="downloadAll()">Download All Invoices & Reports</button>
+
+      <h3>Generate Reports</h3>
+      <p style="color: #666; margin-bottom: 15px;">Reports will be generated using the global Year Range and Quarter settings above.</p>
+
+      <div class="report-controls">
+        <button class="btn btn-report" onclick="generateLocationReport()">Generate Location-wise Report</button>
+        <button class="btn btn-report" onclick="generateRegionReport()">Generate Region-wise Report</button>
+      </div>
+
+      <div id="reportStatus"></div>
+    </div>
+
+    <!-- Processed Data Summary -->
+    <div class="report-section">
+      <h3>Processed Data Summary</h3>
+      <button class="btn btn-report" onclick="loadProcessedData()">Refresh Summary</button>
+      <div id="processedDataList"></div>
+    </div>
+  </div>
+
+  <script>
+const offices = [
+  { code: 4000, name: "Southern Regional Office", lineId: 10 },
+  { code: 4000, name: "Southern Regional Office", lineId: 20 },
+  { code: 4001, name: "Arakkonam AFS", lineId: 10 },
+  { code: 4002, name: "Coimbatore AFS", lineId: 20 },
+  { code: 4003, name: "Meenambakkam AFS", lineId: 30 },
+  { code: 4004, name: "Trichy AFS", lineId: 40 },
+  { code: 4005, name: "Sulur AFS", lineId: 50 },
+  { code: 4006, name: "Madurai AFS", lineId: 60 },
+  { code: 4007, name: "Tambaram AFS", lineId: 70 },
+  { code: 4028, name: "Tuticorin AFS", lineId: 80 },
+  { code: 4038, name: "Ramnad AFS", lineId: 90 },
+  { code: 4076, name: "Chennai Drum Plant", lineId: 100 },
+  { code: 4100, name: "Tamil Nadu State Office", lineId: 110 },
+  { code: 4101, name: "Coimbatore DO", lineId: 111 },
+  { code: 4102, name: "Chennai DO", lineId: 112 },
+  { code: 4103, name: "Madurai DO", lineId: 113 },
+  { code: 4104, name: "Salem Divisional Office", lineId: 114 },
+  { code: 4105, name: "Trichy DO", lineId: 115 },
+  { code: 4111, name: "Coimbatore Indane DO", lineId: 116 },
+  { code: 4112, name: "Chennai Indane DO", lineId: 117 },
+  { code: 4113, name: "Madurai Indane DO", lineId: 118 },
+  { code: 4114, name: "Trichy Indane DO", lineId: 119 },
+  { code: 4121, name: "CPCL Manali", lineId: 120 },
+  { code: 4125, name: "Chennai Terminal Foreshore", lineId: 154 },
+  { code: 4126, name: "Madurai Terminal", lineId: 121 },
+  { code: 4127, name: "Chennai Terminal - Korukkupet", lineId: 122 },
+  { code: 4129, name: "Chennai Terminal - Tondiarpet", lineId: 123 },
+  { code: 4130, name: "Tuticorin Terminal", lineId: 124 },
+  { code: 4133, name: "Trichy Terminal", lineId: 125 },
+  { code: 4134, name: "Chennai FST", lineId: 126 },
+  // Narimanam Plant was commented out in backend; keep commented here too if unused
+  // { code: 4135, name: "Narimanam Plant", lineId: /* none */ },
+  { code: 4136, name: "LBP Chennai", lineId: 128 },
+  { code: 4141, name: "Asanur Terminal", lineId: 129 },
+  { code: 4149, name: "Coimbatore Terminal", lineId: 130 },
+  { code: 4150, name: "Salem Terminal", lineId: 164 },
+  { code: 4150, name: "Salem Terminal", lineId: 184 },
+  { code: 4159, name: "IOCL CO HPC Ennore", lineId: 131 },
+  { code: 4167, name: "IOC Cell RIL Ennore", lineId: 132 },
+  { code: 4170, name: "Chennai POL Jetty", lineId: 133 },
+  { code: 4171, name: "LPG BP Ennore", lineId: 134 },
+  { code: 4172, name: "LPG BP Salem", lineId: 135 },
+  { code: 4174, name: "Pondichery", lineId: 10 },
+  { code: 4175, name: "LPG BP Madurai", lineId: 136 },
+  { code: 4176, name: "LPG BP Mayiladuthurai", lineId: 137 },
+  { code: 4177, name: "LPG BP Erode", lineId: 138 },
+  { code: 4179, name: "LPG BP Coimbatore", lineId: 174 },
+  { code: 4181, name: "LPG BP Trichy", lineId: 139 },
+  { code: 4183, name: "LPG BP Chengelpet", lineId: 140 },
+  { code: 4184, name: "LPG BP Mannargudi", lineId: 141 },
+  { code: 4185, name: "Coimbatore Bottling Plant", lineId: 142 },
+  { code: 4187, name: "LPG BP Ilayangudi", lineId: 143 },
+  { code: 4188, name: "LPG BP Tirunelveli", lineId: 144 }
+];
+
+
+    const yearOptions = ['2024-2025', '2025-2026'];
+    const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
+
+    function showStatus(cardElement, message, type) {
+      let statusDiv = cardElement.querySelector('.status');
+      if (!statusDiv) {
+        statusDiv = document.createElement('div');
+        statusDiv.className = 'status';
+        cardElement.appendChild(statusDiv);
+      }
+      statusDiv.textContent = message;
+      statusDiv.className = `status ${type}`;
+    }
+
+    function renderOffices(list) {
+      const container = document.getElementById('officeList');
+      container.innerHTML = '';
+
+      list.forEach((office, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const info = document.createElement('div');
+        info.className = 'card-info';
+info.innerHTML = `<div class="code">${office.code}${office.lineId ? ` - Line ${office.lineId}` : ''}</div><div class="name">${office.name}</div>`;
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const inputId = `fileInput-${index}`;
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.id = inputId;
+        fileInput.style.display = 'none';
+        fileInput.accept = '.xlsx,.xls';
+
+        const uploadBtn = document.createElement('button');
+        uploadBtn.className = 'btn btn-upload';
+        uploadBtn.textContent = 'Upload';
+        uploadBtn.onclick = () => document.getElementById(inputId).click();
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'btn btn-download';
+        downloadBtn.textContent = 'Download File';
+        downloadBtn.style.display = 'none';
+
+        fileInput.addEventListener('change', () => {
+          const file = fileInput.files[0];
+          if (!file) return;
+
+          // Get global values
+          
+          const quarter = document.getElementById('globalQuarter').value;
+
+          showStatus(card, 'Processing...', 'processing');
+          
+          const formData = new FormData();
+          
+          formData.append('file', file);
+          formData.append('locationCode', office.code);
+          formData.append('locationName', office.name); // <- NEW LINE
+formData.append('lineId', office.lineId || 0); 
+          formData.append('quarter', quarter);
+        
+
+         const token = localStorage.getItem('token'); // 🔐 Get the token
+
+fetch('/api/upload', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + token // 🔐 Add JWT token to the request
+  },
+  body: formData
+})
+
+          .then(res => res.json())
+          .then(result => {
+            if (result.success && result.fileName) {
+              showStatus(card, `Success! Total Amount: ₹${result.totalAmount.toFixed(2)}`, 'success');
+              downloadBtn.style.display = 'inline-block';
+              downloadBtn.onclick = () => {
+                window.location.href = `/output/${result.fileName}`;
+              };
+            } else {
+              showStatus(card, result.error || 'Processing failed', 'error');
+            }
+          })
+          .catch(err => {
+            console.error('Upload error:', err);
+            showStatus(card, 'Upload failed', 'error');
+          });
+        });
+
+        actions.appendChild(fileInput);
+        actions.appendChild(uploadBtn);
+        actions.appendChild(downloadBtn);
+
+        card.appendChild(info);
+        card.appendChild(actions);
+        container.appendChild(card);
+      });
+    }
+
+    function filterOffices() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = offices.filter(o =>
+        o.name.toLowerCase().includes(term) || o.code.toString().includes(term)
+      );
+      
+      renderOffices(filtered);
+    }
+
+    function generateLocationReport() {
+      const quarter = document.getElementById('globalQuarter').value;
+      
+      const statusDiv = document.getElementById('reportStatus');
+      
+      statusDiv.innerHTML = '<div class="status processing">Generating location-wise report...</div>';
+
+      fetch('/api/generate-location-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quarter })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          statusDiv.innerHTML = `<div class="status success">Location-wise report generated successfully!</div>
+                                <button class="btn btn-download" onclick="window.location.href='/output/${result.fileName}'">Download Report</button>`;
+        } else {
+          statusDiv.innerHTML = `<div class="status error">Failed to generate report: ${result.error}</div>`;
+        }
+      })
+      .catch(err => {
+        console.error('Report generation error:', err);
+        statusDiv.innerHTML = '<div class="status error">Failed to generate report</div>';
+      });
+    }
+
+    function generateRegionReport() {
+      const quarter = document.getElementById('globalQuarter').value;
+     
+      const statusDiv = document.getElementById('reportStatus');
+      
+      statusDiv.innerHTML = '<div class="status processing">Generating region-wise report...</div>';
+
+      fetch('/api/generate-region-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+       body: JSON.stringify({ quarter })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          statusDiv.innerHTML = `<div class="status success">Region-wise report generated successfully!</div>
+                                <button class="btn btn-download" onclick="window.location.href='/output/${result.fileName}'">Download Report</button>`;
+        } else {
+          statusDiv.innerHTML = `<div class="status error">Failed to generate report: ${result.error}</div>`;
+        }
+      })
+      .catch(err => {
+        console.error('Report generation error:', err);
+        statusDiv.innerHTML = '<div class="status error">Failed to generate report</div>';
+      });
+    }
+
+    function loadProcessedData() {
+      const listDiv = document.getElementById('processedDataList');
+      listDiv.innerHTML = '<div class="status processing">Loading processed data...</div>';
+
+      fetch('/api/processed-data')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          let html = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+          html += '<tr style="background: #f8f9fa; font-weight: bold;"><th style="border: 1px solid #ddd; padding: 8px;">Location</th><th style="border: 1px solid #ddd; padding: 8px;">Quarter</th><td style="border: 1px solid #ddd; padding: 8px;">${item.yearRange}</td><th style="border: 1px solid #ddd; padding: 8px;">Amount</th><th style="border: 1px solid #ddd; padding: 8px;">Processed</th></tr>';
+          
+          result.data.forEach(item => {
+            html += `<tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">${item.locationCode} - ${item.locationName}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${item.quarter}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${item.yearRange}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">₹${item.totalAmount.toFixed(2)}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${new Date(item.processedAt).toLocaleString()}</td>
+            </tr>`;
+          });
+          
+          html += '</table>';
+          listDiv.innerHTML = html;
+        } else {
+          listDiv.innerHTML = '<div class="status">No processed data found</div>';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading processed data:', err);
+        listDiv.innerHTML = '<div class="status error">Failed to load processed data</div>';
+      });
+    }
+// 👮‍♂️ Check if token exists before showing AMC page
+if (!localStorage.getItem('token')) {
+  window.location.href = '/login'; // redirect to login page
+}
+
+    // Initialize
+    renderOffices(offices);
+    loadProcessedData();
+    function downloadAll() {
+  const btn = document.querySelector('.btn-combined');
+  btn.textContent = 'Preparing download...';
+  btn.disabled = true;
+
+  fetch('/api/download-all')
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to download');
+      return response.blob();
+    })
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'invoices.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      btn.textContent = 'Download All Invoices & Reports';
+      btn.disabled = false;
+    })
+    .catch(err => {
+      console.error('Download error:', err);
+      alert('Failed to download the ZIP. Please try again.');
+      btn.textContent = 'Download All Invoices & Reports';
+      btn.disabled = false;
+    });
+}
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = '/login';
+}
+
+
+  </script>
+</body>
+</html>

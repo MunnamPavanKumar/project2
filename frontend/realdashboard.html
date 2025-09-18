@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AMC Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 8px; }
+    input, button { padding: 5px; margin: 5px; }
+    .highlight { background-color: #e7f7e7; }
+    .save-btn { background-color: #28a745; color: white; border: none; cursor: pointer; }
+    .save-btn:hover { background-color: #218838; }
+    .delete-btn { background-color: #dc3545; color: white; border: none; cursor: pointer; }
+    .delete-btn:hover { background-color: #c82333; }
+    .modified { background-color: #fff3cd; }
+    .actions-cell { white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+<h2>AMC Asset Dashboard</h2>
+
+<input type="text" id="search" placeholder="Search by Sr No or Asset Name" />
+<button onclick="loadAssets()">Search</button>
+<button onclick="addRow()">Add Row</button>
+
+<table id="assetTable">
+  <thead>
+    <tr>
+      <th>Sr No</th>
+      <th>Service Short Text</th>
+      <th>Plant Code</th>
+      <th>AMC From</th>
+      <th>AMC To</th>
+      <th>No. of Assets</th>
+      <th>Quantity</th>
+      <th>Unit Price</th>
+      <th>Total Cost</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  const API = 'http://localhost:5000/api/assets';
+  let originalData = {}; // Store original data for comparison
+  let modifiedRows = new Set(); // Track modified rows
+
+  async function loadAssets() {
+    try {
+      const q = document.getElementById('search').value;
+      const res = await fetch(`${API}?q=${q}`);
+      const data = await res.json();
+      const tbody = document.querySelector('#assetTable tbody');
+      tbody.innerHTML = '';
+      originalData = {};function formatDate(input) {
+  const date = new Date(input);
+  return date.toISOString().split('T')[0]; // Returns "YYYY-MM-DD"
+}
+
+      modifiedRows.clear();
+      
+      data.forEach(asset => {
+        // Store original data
+        originalData[asset.sr_no] = { ...asset };
+        
+        const tr = document.createElement('tr');
+        tr.id = `row-${asset.sr_no}`;
+        tr.innerHTML = `
+          <td>${asset.sr_no}</td>
+          <td><input value="${asset.service_short_text}" onchange="markAsModified(${asset.sr_no}, 'service_short_text', this.value)" data-field="service_short_text"/></td>
+        <td><input value="${asset.plant_code}" onchange="markAsModified(${asset.sr_no}, 'plant_code', this.value)" data-field="plant_code"/></td>
+          <td><input type="date" value="${formatDate(asset.amc_from)}" onchange="markAsModified(${asset.sr_no}, 'amc_from', this.value)" data-field="amc_from"/></td>
+          <td><input type="date" value="${formatDate(asset.amc_to)}" onchange="markAsModified(${asset.sr_no}, 'amc_to', this.value)" data-field="amc_to"/></td>
+          <td><input type="number" value="${asset.no_of_asset}" onchange="markAsModified(${asset.sr_no}, 'no_of_asset', this.value)" data-field="no_of_asset"/></td>
+          <td><input type="number" value="${asset.quantity}" onchange="markAsModified(${asset.sr_no}, 'quantity', this.value)" data-field="quantity"/></td>
+          <td><input type="number" step="0.01" value="${asset.unit_price}" onchange="markAsModified(${asset.sr_no}, 'unit_price', this.value)" data-field="unit_price"/></td>
+          <td class="total-cost">${parseFloat(asset.quantity * asset.unit_price).toFixed(2)}</td>
+          <td class="actions-cell">
+            <button class="save-btn" onclick="saveAsset(${asset.sr_no})" id="save-${asset.sr_no}" style="display: none;">Save</button>
+            <button class="delete-btn" onclick="deleteAsset(${asset.sr_no})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (error) {
+      console.error('Error loading assets:', error);
+      alert('Error loading assets. Please try again.');
+    }
+  }
+
+
+  function markAsModified(sr_no, field, value) {
+    const row = document.getElementById(`row-${sr_no}`);
+    const saveBtn = document.getElementById(`save-${sr_no}`);
+    
+    // Check if value actually changed
+    if (originalData[sr_no] && originalData[sr_no][field] != value) {
+      modifiedRows.add(sr_no);
+      row.classList.add('modified');
+      saveBtn.style.display = 'inline-block';
+    } else {
+      // Check if all fields are back to original
+      const inputs = row.querySelectorAll('input');
+      let hasChanges = false;
+      
+      inputs.forEach(input => {
+        const fieldName = input.dataset.field;
+        if (originalData[sr_no] && originalData[sr_no][fieldName] != input.value) {
+          hasChanges = true;
+        }
+      });
+      
+      if (!hasChanges) {
+        modifiedRows.delete(sr_no);
+        row.classList.remove('modified');
+        saveBtn.style.display = 'none';
+      }
+    }
+    
+    // Update total cost dynamically
+    updateTotalCost(sr_no);
+  }
+
+  function updateTotalCost(sr_no) {
+    const row = document.getElementById(`row-${sr_no}`);
+    const quantityInput = row.querySelector('input[data-field="quantity"]');
+    const unitPriceInput = row.querySelector('input[data-field="unit_price"]');
+    const totalCostCell = row.querySelector('.total-cost');
+    
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const unitPrice = parseFloat(unitPriceInput.value) || 0;
+    const totalCost = quantity * unitPrice;
+    
+    totalCostCell.textContent = totalCost.toFixed(2);
+  }
+
+  async function saveAsset(sr_no) {
+    try {
+      const row = document.getElementById(`row-${sr_no}`);
+      const inputs = row.querySelectorAll('input');
+      const updates = {};
+      
+      inputs.forEach(input => {
+        const field = input.dataset.field;
+        if (field) {
+          updates[field] = input.value;
+        }
+      });
+      
+      const res = await fetch(`${API}/${sr_no}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      
+      if (res.ok) {
+        const updatedAsset = await res.json();
+        
+        // Update original data
+        originalData[sr_no] = { ...updatedAsset };
+        
+        // Remove modified styling
+        modifiedRows.delete(sr_no);
+        row.classList.remove('modified');
+        document.getElementById(`save-${sr_no}`).style.display = 'none';
+        
+        // Show success feedback
+        showFeedback('Asset saved successfully!', 'success');
+      } else {
+        throw new Error('Failed to save asset');
+      }
+    } catch (error) {
+      console.error('Error saving asset:', error);
+      showFeedback('Error saving asset. Please try again.', 'error');
+    }
+  }
+
+  async function deleteAsset(sr_no) {
+    if (!confirm('Are you sure you want to delete this asset?')) return;
+    
+    try {
+      const res = await fetch(`${API}/${sr_no}`, { method: 'DELETE' });
+      
+      if (res.ok) {
+        loadAssets();
+        showFeedback('Asset deleted successfully!', 'success');
+      } else {
+        throw new Error('Failed to delete asset');
+      }
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+      showFeedback('Error deleting asset. Please try again.', 'error');
+    }
+  }
+
+  async function addRow() {
+    const asset = {
+      main_line_short_text: 'New Asset',
+      plant_code: '0',
+      amc_from: '2024-01-01',
+      amc_to: '2024-12-31',
+      no_of_asset: 1,
+      quantity: 1,
+      unit_price: 0
+    };
+
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(asset)
+      });
+      
+      if (res.ok) {
+        loadAssets();
+        showFeedback('New asset added successfully!', 'success');
+      } else {
+        throw new Error('Failed to add asset');
+      }
+    } catch (error) {
+      console.error('Error adding asset:', error);
+      showFeedback('Error adding asset. Please try again.', 'error');
+    }
+  }
+
+  function showFeedback(message, type) {
+    // Simple feedback system
+    const existingFeedback = document.querySelector('.feedback-message');
+    if (existingFeedback) {
+      existingFeedback.remove();
+    }
+    
+    const feedback = document.createElement('div');
+    feedback.className = 'feedback-message';
+    feedback.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      z-index: 1000;
+      background-color: ${type === 'success' ? '#28a745' : '#dc3545'};
+    `;
+    feedback.textContent = message;
+    
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+      feedback.remove();
+    }, 3000);
+  }
+
+  // Load assets on page load
+  loadAssets();
+</script>
+
+</body>
+</html>

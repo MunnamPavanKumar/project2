@@ -1,0 +1,226 @@
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px #999;
+        }
+
+        .header {
+            text-align: center;
+            padding: 15px;
+            background-color: #e6e6e6;
+            border: 1px solid #999;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background-color: #fafafa;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        .file-input input[type="file"] {
+            padding: 5px;
+            border: 1px solid #999;
+            background-color: white;
+            width: 100%;
+        }
+
+        .button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: 1px solid #999;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .button:disabled {
+            background-color: #d0d0d0;
+            cursor: not-allowed;
+            color: #666;
+        }
+
+        .button.primary {
+            background-color: #0066cc;
+            color: white;
+            font-weight: bold;
+        }
+
+        .button.primary:hover:not(:disabled) {
+            background-color: #0052a3;
+        }
+
+        .button.danger {
+            background-color: #cc0000;
+            color: white;
+        }
+
+        .button.danger:hover {
+            background-color: #a30000;
+        }
+
+        .file-list {
+            margin: 15px 0;
+        }
+
+        .file-item {
+            padding: 8px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+            background-color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: bold;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .remove-btn {
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background-color: #fff9c4;
+            border: 1px solid #f0c674;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid;
+        }
+
+        .error {
+            background-color: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+
+        .success {
+            background-color: #e8f5e8;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .results {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .stats {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+        }
+
+        .stats table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .stats td {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+        }
+
+        .stats td:first-child {
+            font-weight: bold;
+            background-color: #e0e0e0;
+        }
+
+        .location-list {
+            border: 1px solid #ccc;
+        }
+
+        .location-item {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            background-color: white;
+        }
+
+        .location-item:last-child {
+            border-bottom: none;
+        }
+
+        .location-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .location-details {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .download-link {
+            background-color: #0066cc;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .download-link:hover {
+            background-color: #0052a3;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }

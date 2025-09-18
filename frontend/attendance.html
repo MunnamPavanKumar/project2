@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- your existing head content -->
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Attendance Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .controls {
+            background-color: #ecf0f1;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .tab-button.active {
+            background-color: #2980b9;
+        }
+
+        .tab-button:hover {
+            background-color: #2980b9;
+        }
+
+        .quarter-select {
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .download-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .download-btn:hover {
+            background-color: #229954;
+        }
+
+        .summary-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .summary-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .info-bar {
+            background-color: #ecf0f1;
+            padding: 15px 20px;
+            text-align: center;
+            color: #34495e;
+            font-size: 14px;
+        }
+
+        .calendar-section {
+            padding: 20px;
+            display: block;
+        }
+
+        .calendar-section.hidden {
+            display: none;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background-color: #5a6c7d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-btn:hover {
+            background-color: #4a5a68;
+        }
+
+        .nav-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .month-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .calendar th {
+            background-color: #5a6c7d;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .calendar td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+            height: 80px;
+            background-color: #fafafa;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .calendar td:hover {
+            background-color: #f0f0f0;
+        }
+
+        .calendar td.selected {
+            background-color: #3498db;
+            color: white;
+        }
+
+    
+
+        .date-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .calendar td.selected .date-number {
+            color: white;
+        }
+
+        .attendance-indicator {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .employee-panel {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .employee-panel.active {
+            display: block;
+        }
+
+        .employee-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .employee-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 15px;
+        }
+
+        .employee-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .employee-info {
+            flex: 1;
+        }
+
+        .employee-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 2px;
+        }
+
+        .employee-id {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .employee-designation {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .attendance-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .attendance-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .attendance-option input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .attendance-option label {
+            font-size: 14px;
+            cursor: pointer;
+            color: #495057;
+        }
+
+        .attendance-option.present label {
+            color: #28a745;
+        }
+
+        .attendance-option.absent label {
+            color: #dc3545;
+        }
+
+        .attendance-option.awor label {
+            color: #ffc107;
+        }
+
+        .save-btn {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .save-btn:hover {
+            background-color: #138496;
+        }
+
+        .summary-section {
+            padding: 20px;
+            display: none;
+        }
+
+        .summary-section.active {
+            display: block;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .summary-table th,
+        .summary-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .summary-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .summary-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .penalty-amount {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .awor-count {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .calendar-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .calendar td {
+                height: 60px;
+                padding: 5px;
+            }
+            
+            .employee-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            Employee Attendance Dashboard - CIPL ENGINEERS
+        </div>
+        
+        <div class="controls">
+            <button class="tab-button active" onclick="switchTab('attendance')">Attendance</button>
+            <button class="tab-button" onclick="switchTab('summary')">Summary</button>
+            <label for="quarter">Select Quarter:</label>
+            <select id="quarter" class="quarter-select" onchange="onQuarterChange()">
+                <option value="">Loading quarters...</option>
+            </select>
+            <button class="download-btn" onclick="downloadPenaltyReport()">Download Penalty Report</button>
+        </div>
+
+        <div class="info-bar" id="infoBar">
+            Select a quarter to view attendance data
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="successMessage" class="success" style="display: none;"></div>
+
+        <!-- Attendance Tab -->
+        <div id="attendanceTab" class="calendar-section">
+            <div class="calendar-header">
+                <button class="nav-btn" id="prevBtn" onclick="navigateMonth(-1)">< Previous</button>
+                <div class="month-title" id="monthTitle">Select Quarter</div>
+                <button class="nav-btn" id="nextBtn" onclick="navigateMonth(1)">Next ></button>
+            </div>
+            
+            <div id="loadingMessage" class="loading">Select a quarter to view calendar</div>
+            
+            <table class="calendar" id="calendar" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Sun</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                    </tr>
+                </thead>
+                <tbody id="calendarBody">
+                    <!-- Calendar dates will be populated here -->
+                </tbody>
+            </table>
+
+            <div class="employee-panel" id="employeePanel">
+                <h3>Employee Attendance - <span id="selectedDateText">Select a date</span></h3>
+                <div class="employee-list" id="employeeList">
+                    <!-- Employee list will be populated here -->
+                </div>
+                <button class="save-btn" onclick="saveAttendance()">Save Attendance</button>
+            </div>
+        </div>
+
+        <!-- Summary Tab -->
+        <div id="summaryTab" class="summary-section">
+            <h3>Attendance Summary</h3>
+            <div id="summaryLoading" class="loading">Select a quarter to view summary</div>
+            <table class="summary-table" id="summaryTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Present Days</th>
+                        <th>Absent Days</th>
+                        <th>AWOR Days</th>
+                        <th>Penalty Amount (₹)</th>
+                        <th>Penalty with GST (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                    <!-- Summary data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+         function getAuthToken() {
+    // Use the same token key as index.html
+    return localStorage.getItem('token');
+  }
+
+  function removeAuthToken() {
+    localStorage.removeItem('token');
+  }
+
+
+ function authenticatedFetch(url, options = {}) {
+    const token = getAuthToken();
+    
+    if (!token) {
+      console.error('No authentication token found');
+      redirectToLogin();
+      return Promise.reject(new Error('No authentication token found'));
+    }
+    
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+    
+    return fetch(url, { ...options, headers })
+      .then(response => {
+        if (response.status === 401 || response.status === 403) {
+          console.error('Authentication failed:', response.status);
+          handleAuthError();
+          throw new Error('Authentication failed');
+        }
+        return response;
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        if (error.message.includes('Authentication') || error.message.includes('Token')) {
+          handleAuthError();
+        }
+        throw error;
+      });
+  }
+
+  function handleAuthError() {
+    console.error('Authentication error detected');
+    removeAuthToken();
+    alert('Your session has expired. Please login again.');
+    redirectToLogin();
+  }
+
+  function redirectToLogin() {
+    window.location.href = '/login';
+  }
+
+  function checkAuthentication() {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('No authentication token found, redirecting to login');
+      redirectToLogin();
+      return false;
+    }
+    return true;
+  }
+
+  function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+      removeAuthToken();
+      redirectToLogin();
+    }
+  }
+
+  // Show/hide loading indicator
+  function showLoading(show = true) {
+    const indicator = document.getElementById('loadingIndicator');
+    indicator.style.display = show ? 'block' : 'none';
+  }
+
+  // Check authentication immediately
+  if (!checkAuthentication()) {
+    throw new Error('Authentication required');
+  }
+        // Global variables
+        let currentQuarter = '';
+        let currentMonthIndex = 0;
+        let availableMonths = [];
+        let selectedDate = null;
+        let attendanceData = {};
+        let employees = [];
+        let quarters = [];
+        let currentTab = 'attendance';
+
+        // API Base URL
+        const API_BASE_URL =  `${window.location.origin}/api/attendance`;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+        });
+
+        async function initializeDashboard() {
+            try {
+                showLoading('Loading quarters...');
+                await loadQuarters();
+                await loadEmployees();
+                populateQuarters();
+                updateInfoBar();
+                hideLoading();
+            } catch (error) {
+                showError('Failed to load initial data: ' + error.message);
+            }
+        }
+
+        async function loadQuarters() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/quarters`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                quarters = await response.json();
+            } catch (error) {
+                throw new Error('Failed to load quarters: ' + error.message);
+            }
+        }
+
+        async function loadEmployees() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/employees`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                employees = await response.json();
+            } catch (error) {
+                throw new Error('Failed to load employees: ' + error.message);
+            }
+        }
+
+        function populateQuarters() {
+            const quarterSelect = document.getElementById('quarter');
+            quarterSelect.innerHTML = '<option value="">Select Quarter</option>';
+            
+            quarters.forEach(quarter => {
+                const option = document.createElement('option');
+                option.value = quarter.key;
+                option.textContent = quarter.name;
+                quarterSelect.appendChild(option);
+            });
+        }
+
+        async function onQuarterChange() {
+            const quarterSelect = document.getElementById('quarter');
+            currentQuarter = quarterSelect.value;
+            
+            if (currentQuarter) {
+                try {
+                    showLoading('Loading quarter data...');
+                    await loadQuarterData();
+                    currentMonthIndex = 0;
+                    await loadAttendanceData();
+                    generateCalendar();
+                    updateInfoBar();
+                    hideLoading();
+                    
+                    // Load summary if summary tab is active
+                    if (currentTab === 'summary') {
+                        await loadSummaryData();
+                    }
+                } catch (error) {
+                    showError('Failed to load quarter data: ' + error.message);
+                }
+            } else {
+                hideCalendar();
+                updateInfoBar();
+            }
+        }
+
+        async function loadQuarterData() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/quarters/${currentQuarter}/months`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                availableMonths = await response.json();
+            } catch (error) {
+                throw new Error('Failed to load quarter months: ' + error.message);
+            }
+        }
+
+        async function loadAttendanceData() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/attendance/range/${currentQuarter}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                attendanceData = await response.json();
+            } catch (error) {
+                console.warn('Failed to load attendance data:', error.message);
+                attendanceData = {};
+            }
+        }
+function generateCalendar() {
+    if (!availableMonths || availableMonths.length === 0) {
+        return;
+    }
+
+    const currentMonth = availableMonths[currentMonthIndex];
+    const calendar = document.getElementById('calendar');
+    const calendarBody = document.getElementById('calendarBody');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const monthTitle = document.getElementById('monthTitle');
+    
+    // Show calendar, hide loading
+    calendar.style.display = 'table';
+    loadingMessage.style.display = 'none';
+    
+    // Update month title
+    monthTitle.textContent = currentMonth.name;
+    
+    // Clear previous calendar
+    calendarBody.innerHTML = '';
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(currentMonth.year, currentMonth.month - 1, 1).getDay();
+    const daysInMonth = new Date(currentMonth.year, currentMonth.month, 0).getDate();
+    
+    let date = 1;
+    let row = document.createElement('tr');
+    
+    // Add empty cells for days before the first day of month
+    for (let i = 0; i < firstDay; i++) {
+        const cell = document.createElement('td');
+        row.appendChild(cell);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        if ((firstDay + day - 1) % 7 === 0 && day > 1) {
+            calendarBody.appendChild(row);
+            row = document.createElement('tr');
+        }
+        
+        const cell = document.createElement('td');
+        
+        // Fixed date key generation - ensure proper padding
+        const dateKey = `${currentMonth.year}-${String(currentMonth.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        console.log('Generated dateKey for day', day, ':', dateKey);
+        
+        cell.innerHTML = `<div class="date-number">${day}</div>`;
+        
+        // Store the dateKey as a data attribute for reliable access
+        cell.setAttribute('data-date', dateKey);
+        
+        // Fixed click handler
+        cell.onclick = function() {
+            const clickedDateKey = this.getAttribute('data-date');
+            console.log('Clicked date key:', clickedDateKey);
+            selectDate(clickedDateKey);
+        };
+        
+        // Check if this date has attendance data
+        if (attendanceData[dateKey] && Object.keys(attendanceData[dateKey]).length > 0) {
+            cell.classList.add('has-attendance');
+            const attendanceCount = Object.keys(attendanceData[dateKey]).length;
+            const indicator = document.createElement('div');
+            indicator.className = 'attendance-indicator';
+           
+            cell.appendChild(indicator);
+        }
+        
+        row.appendChild(cell);
+    }
+    
+    // Fill remaining cells
+    while (row.children.length < 7) {
+        const cell = document.createElement('td');
+        row.appendChild(cell);
+    }
+    
+    calendarBody.appendChild(row);
+    
+    updateNavigationButtons();
+}
+
+// Alternative formatDate function (helper function)
+function formatDate(dateString) {
+    console.log('Formatting date string:', dateString);
+    
+    // Split the date string and parse components
+    const [year, month, day] = dateString.split('-').map(Number);
+    
+    // Create date object (month is 0-indexed in JavaScript)
+    const date = new Date(year, month - 1, day);
+    
+    // Format the date
+    const formatted = date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    console.log('Formatted result:', formatted);
+    return formatted;
+}
+   async function selectDate(dateKey) {
+    // Clear previous selection
+    document.querySelectorAll('.calendar td').forEach(cell => {
+        cell.classList.remove('selected');
+    });
+    
+    // Select current date - find the correct cell
+    const targetCell = event.target.closest('td');
+    if (targetCell) {
+        targetCell.classList.add('selected');
+    }
+    
+    selectedDate = dateKey; // Keep as YYYY-MM-DD string
+    console.log('Selected date:', selectedDate);
+    
+    // Show employee panel and load data for this date
+    await showEmployeePanel();
+}
+
+// Add these console.log statements to your showEmployeePanel function:
+
+async function showEmployeePanel() {
+    const panel = document.getElementById('employeePanel');
+    const selectedDateText = document.getElementById('selectedDateText');
+    
+    panel.classList.add('active');
+    
+    // Parse the date string properly
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    
+    // Create date object using UTC to avoid timezone issues
+    const displayDate = new Date(Date.UTC(year, month - 1, day));
+    
+    // Format the date for display using UTC timezone
+    const formattedDate = displayDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC'  // This prevents timezone shifting
+    });
+    
+    selectedDateText.textContent = formattedDate;
+    
+    await populateEmployeeList();
+}
+
+
+        async function populateEmployeeList() {
+            const employeeList = document.getElementById('employeeList');
+            employeeList.innerHTML = '<div class="loading">Loading employees...</div>';
+            
+            try {
+                // Get employees with their attendance for this date
+                const response = await authenticatedFetch(`${API_BASE_URL}/employees/date/${selectedDate}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const employeesWithAttendance = await response.json();
+                
+                employeeList.innerHTML = '';
+                
+                employeesWithAttendance.forEach(employee => {
+                    const employeeDiv = document.createElement('div');
+                    employeeDiv.className = 'employee-item';
+                    
+                    employeeDiv.innerHTML = `
+                        <div class="employee-info">
+                            <div class="employee-name">${employee.name}</div>
+                            <div class="employee-id">${employee.id}</div>
+                            <div class="employee-designation">${employee.designation}</div>
+                        </div>
+                        <div class="attendance-controls">
+                            <div class="attendance-option present">
+                                <input type="radio" id="present_${employee.id}" name="attendance_${employee.id}" value="present"
+                                       ${employee.status === 'present' ? 'checked' : ''}>
+                                <label for="present_${employee.id}">Present</label>
+                            </div>
+                            <div class="attendance-option absent">
+                                <input type="radio" id="absent_${employee.id}" name="attendance_${employee.id}" value="absent"
+                                       ${employee.status === 'absent' ? 'checked' : ''}>
+                                <label for="absent_${employee.id}">Absent</label>
+                            </div>
+                            <div class="attendance-option awor">
+                                <input type="radio" id="awor_${employee.id}" name="attendance_${employee.id}" value="awor"
+                                       ${employee.status === 'awor' ? 'checked' : ''}>
+                                <label for="awor_${employee.id}">AWOR</label>
+                            </div>
+                        </div>
+                    `;
+                    
+                    employeeList.appendChild(employeeDiv);
+                });
+            } catch (error) {
+                employeeList.innerHTML = '<div class="error">Failed to load employees: ' + error.message + '</div>';
+            }
+        }
+
+        async function saveAttendance() {
+            if (!selectedDate) {
+                showError('Please select a date first');
+                return;
+            }
+            
+            const attendanceUpdates = [];
+            
+            // Collect all attendance data
+            document.querySelectorAll('.employee-item').forEach(item => {
+                const employeeId = item.querySelector('input[type="radio"]').name.split('_')[1];
+                const selectedRadio = item.querySelector('input[type="radio"]:checked');
+                
+                if (selectedRadio) {
+                    attendanceUpdates.push({
+                        employeeId: employeeId,
+                        date: selectedDate,
+                        status: selectedRadio.value
+                    });
+                }
+            });
+            
+            if (attendanceUpdates.length === 0) {
+                showError('No attendance data to save');
+                return;
+            }
+            
+            try {
+                showLoading('Saving attendance...');
+                
+                // Save each attendance record
+                for (const update of attendanceUpdates) {
+                    const response = await authenticatedFetch(`${API_BASE_URL}/attendance`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(update)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to save attendance for employee ${update.employeeId}`);
+                    }
+                }
+                
+                // Reload attendance data and refresh calendar
+                await loadAttendanceData();
+                generateCalendar();
+                
+                showSuccess('Attendance saved successfully!');
+                hideLoading();
+            } catch (error) {
+                showError('Failed to save attendance: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        function navigateMonth(direction) {
+            currentMonthIndex += direction;
+            
+            if (currentMonthIndex < 0) {
+                currentMonthIndex = 0;
+            } else if (currentMonthIndex >= availableMonths.length) {
+                currentMonthIndex = availableMonths.length - 1;
+            }
+            
+            generateCalendar();
+            
+            // Hide employee panel when navigating
+            document.getElementById('employeePanel').classList.remove('active');
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentMonthIndex <= 0;
+            nextBtn.disabled = currentMonthIndex >= availableMonths.length - 1;
+        }
+
+        function hideCalendar() {
+            document.getElementById('calendar').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('loadingMessage').textContent = 'Select a quarter to view calendar';
+            document.getElementById('monthTitle').textContent = 'Select Quarter';
+            document.getElementById('employeePanel').classList.remove('active');
+        }
+
+        function updateInfoBar() {
+            const infoBar = document.getElementById('infoBar');
+            
+            if (currentQuarter) {
+                const quarter = quarters.find(q => q.key === currentQuarter);
+                if (quarter) {
+                    infoBar.textContent = `Viewing ${currentTab} for ${quarter.name}`;
+                }
+            } else {
+                infoBar.textContent = 'Select a quarter to view data';
+            }
+        }
+
+        async function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide sections
+            document.getElementById('attendanceTab').classList.toggle('active', tab === 'attendance');
+            document.getElementById('summaryTab').classList.toggle('active', tab === 'summary');
+            
+            // Load data for summary tab
+            if (tab === 'summary' && currentQuarter) {
+                await loadSummaryData();
+            }
+            
+            updateInfoBar();
+        }
+
+        async function loadSummaryData() {
+            const summaryTable = document.getElementById('summaryTable');
+            const summaryTableBody = document.getElementById('summaryTableBody');
+            const summaryLoading = document.getElementById('summaryLoading');
+            
+            try {
+                summaryLoading.style.display = 'block';
+                summaryTable.style.display = 'none';
+                
+                const response = await authenticatedFetch(`${API_BASE_URL}/attendance/summary/${currentQuarter}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const summaryData = await response.json();
+                
+                summaryTableBody.innerHTML = '';
+                
+                let totalPenalty = 0;
+                let totalPenaltyWithGST = 0;
+                
+                summaryData.forEach(employee => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${employee.id}</td>
+                        <td>${employee.name}</td>
+                        <td>${employee.designation}</td>
+                        <td>${employee.present_days}</td>
+                        <td>${employee.absent_days}</td>
+                        <td class="awor-count">${employee.awor_days}</td>
+                        <td class="penalty-amount">₹${employee.penalty_amount.toLocaleString()}</td>
+                        <td class="penalty-amount">₹${employee.penalty_with_gst.toLocaleString()}</td>
+                    `;
+                    summaryTableBody.appendChild(row);
+                    
+                    totalPenalty += employee.penalty_amount;
+                    totalPenaltyWithGST += employee.penalty_with_gst;
+                });
+                
+                // Add total row
+                const totalRow = document.createElement('tr');
+                totalRow.style.fontWeight = 'bold';
+                totalRow.style.backgroundColor = '#f8f9fa';
+                totalRow.innerHTML = `
+                    <td colspan="6"><strong>TOTAL</strong></td>
+                    <td class="penalty-amount"><strong>₹${totalPenalty.toLocaleString()}</strong></td>
+                    <td class="penalty-amount"><strong>₹${totalPenaltyWithGST.toLocaleString()}</strong></td>
+                `;
+                summaryTableBody.appendChild(totalRow);
+                
+                summaryLoading.style.display = 'none';
+                summaryTable.style.display = 'table';
+            } catch (error) {
+                summaryLoading.innerHTML = '<div class="error">Failed to load summary: ' + error.message + '</div>';
+            }
+        }
+
+        async function downloadPenaltyReport() {
+            if (!currentQuarter) {
+                showError('Please select a quarter first');
+                return;
+            }
+            
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/export/penalties/${currentQuarter}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `penalty_report_${currentQuarter}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showSuccess('Penalty report downloaded successfully!');
+            } catch (error) {
+                showError('Failed to download penalty report: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Hide success message if visible
+            document.getElementById('successMessage').style.display = 'none';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            
+            // Hide error message if visible
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function showLoading(message) {
+            const loadingDiv = document.getElementById('loadingMessage');
+            loadingDiv.textContent = message;
+            loadingDiv.style.display = 'block';
+            
+            // Hide calendar while loading
+            document.getElementById('calendar').style.display = 'none';
+        }
+
+        function hideLoading() {
+            const loadingDiv = document.getElementById('loadingMessage');
+            loadingDiv.style.display = 'none';
+        }
+
+function formatDate(dateString) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // avoid UTC parsing
+    return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+        function getCurrentQuarterName() {
+            const quarter = quarters.find(q => q.key === currentQuarter);
+            return quarter ? quarter.name : 'Unknown Quarter';
+        }
+
+        // Event listeners for keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // ESC key to close employee panel
+            if (e.key === 'Escape') {
+                document.getElementById('employeePanel').classList.remove('active');
+                selectedDate = null;
+                
+                // Clear calendar selection
+                document.querySelectorAll('.calendar td').forEach(cell => {
+                    cell.classList.remove('selected');
+                });
+            }
+            
+            // Arrow keys for month navigation
+            if (e.key === 'ArrowLeft' && currentQuarter && !document.getElementById('prevBtn').disabled) {
+                navigateMonth(-1);
+            }
+            if (e.key === 'ArrowRight' && currentQuarter && !document.getElementById('nextBtn').disabled) {
+                navigateMonth(1);
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            // Recalculate calendar layout if needed
+            if (currentQuarter && availableMonths.length > 0) {
+                generateCalendar();
+            }
+        });
+
+        // Prevent form submission on Enter key in attendance controls
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.type === 'radio') {
+                e.preventDefault();
+                // Optionally trigger save
+                if (selectedDate) {
+                    saveAttendance();
+                }
+            }
+        });
+
+        // Auto-save functionality (optional)
+        let autoSaveTimeout;
+        function scheduleAutoSave() {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                if (selectedDate) {
+                    saveAttendance();
+                }
+            }, 30000); // Auto-save after 30 seconds of inactivity
+        }
+
+        // Add event listeners to attendance radio buttons for auto-save
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'radio' && e.target.name.startsWith('attendance_')) {
+                scheduleAutoSave();
+            }
+        });
+
+        // Network status monitoring
+        window.addEventListener('online', function() {
+            showSuccess('Connection restored');
+        });
+
+        window.addEventListener('offline', function() {
+            showError('Connection lost. Please check your internet connection.');
+        });
+
+        // Data validation functions
+        function validateAttendanceData(updates) {
+            const errors = [];
+            
+            updates.forEach((update, index) => {
+                if (!update.employeeId) {
+                    errors.push(`Employee ID missing for record ${index + 1}`);
+                }
+                if (!update.date) {
+                    errors.push(`Date missing for record ${index + 1}`);
+                }
+                if (!['present', 'absent', 'awor'].includes(update.status)) {
+                    errors.push(`Invalid status for record ${index + 1}`);
+                }
+            });
+            
+            return errors;
+        }
+
+        // Export functionality
+        function exportAttendanceData() {
+            if (!currentQuarter) {
+                showError('Please select a quarter first');
+                return;
+            }
+            
+            const data = {
+                quarter: getCurrentQuarterName(),
+                attendance: attendanceData,
+                employees: employees,
+                exported: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance_${currentQuarter}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showSuccess('Attendance data exported successfully!');
+        }
+
+        // Debug mode for development
+        const DEBUG_MODE = false;
+        
+        function debugLog(message, data = null) {
+            if (DEBUG_MODE) {
+                console.log(`[DEBUG] ${message}`, data);
+            }
+        }
+
+        // Initialize debug mode if needed
+        if (DEBUG_MODE) {
+            window.dashboardDebug = {
+                currentQuarter,
+                availableMonths,
+                selectedDate,
+                attendanceData,
+                employees,
+                quarters
+            };
+        }
+
+        // Performance monitoring
+        function measurePerformance(name, fn) {
+            const start = performance.now();
+            const result = fn();
+            const end = performance.now();
+            debugLog(`${name} took ${end - start} milliseconds`);
+            return result;
+        }
+
+        // Refresh data functionality
+        async function refreshData() {
+            try {
+                showLoading('Refreshing data...');
+                await loadQuarters();
+                await loadEmployees();
+                populateQuarters();
+                
+                if (currentQuarter) {
+                    await loadQuarterData();
+                    await loadAttendanceData();
+                    generateCalendar();
+                    
+                    if (currentTab === 'summary') {
+                        await loadSummaryData();
+                    }
+                }
+                
+                showSuccess('Data refreshed successfully!');
+                hideLoading();
+            } catch (error) {
+                showError('Failed to refresh data: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Add refresh button functionality (if you want to add a refresh button to the UI)
+        function addRefreshButton() {
+            const controls = document.querySelector('.controls');
+            const refreshBtn = document.createElement('button');
+            refreshBtn.textContent = 'Refresh Data';
+            refreshBtn.className = 'download-btn';
+            refreshBtn.onclick = refreshData;
+            controls.appendChild(refreshBtn);
+        }
+
+        // Uncomment the line below if you want to add a refresh button
+        // document.addEventListener('DOMContentLoaded', addRefreshButton);
+
+        // Handle API errors gracefully
+        function handleApiError(error, context) {
+            let message = 'An error occurred';
+            
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                message = 'Unable to connect to server. Please check your connection.';
+            } else if (error.message.includes('404')) {
+                message = 'Data not found. Please try refreshing the page.';
+            } else if (error.message.includes('500')) {
+                message = 'Server error. Please try again later.';
+            } else {
+                message = error.message;
+            }
+            
+            showError(`${context}: ${message}`);
+            debugLog(`API Error in ${context}`, error);
+        }
+
+        // Improved error handling for all async functions
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            try {
+                const response = await originalFetch.apply(this, args);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response;
+            } catch (error) {
+                debugLog('Fetch error', error);
+                throw error;
+            }
+        };
+
+        // Local storage for caching (for offline support)
+        function cacheData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (error) {
+                debugLog('Failed to cache data', error);
+            }
+        }
+
+        function getCachedData(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            } catch (error) {
+                debugLog('Failed to retrieve cached data', error);
+                return null;
+            }
+        }
+
+        // Add version check for data compatibility
+        const DATA_VERSION = '1.0.0';
+        
+        function checkDataVersion() {
+            const storedVersion = localStorage.getItem('dataVersion');
+            if (storedVersion !== DATA_VERSION) {
+                // Clear old cached data
+                localStorage.clear();
+                localStorage.setItem('dataVersion', DATA_VERSION);
+                debugLog('Data version updated, cache cleared');
+            }
+        }
+
+        // Initialize version check
+        document.addEventListener('DOMContentLoaded', checkDataVersion);
+
+        // Final initialization
+        debugLog('Dashboard script loaded successfully');
+    </script>
+</body>
+</html>

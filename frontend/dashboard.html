@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AMC Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 8px; }
+    input, button { padding: 5px; margin: 5px; }
+    .highlight { background-color: #e7f7e7; }
+    .save-btn { background-color: #28a745; color: white; border: none; cursor: pointer; }
+    .save-btn:hover { background-color: #218838; }
+    .delete-btn { background-color: #dc3545; color: white; border: none; cursor: pointer; }
+    .delete-btn:hover { background-color: #c82333; }
+    .modified { background-color: #fff3cd; }
+    .actions-cell { white-space: nowrap; }
+    .header-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 20px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+    .logout-btn {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .logout-btn:hover {
+      background-color: #5a6268;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header-bar">
+  <h2>AMC Asset Dashboard</h2>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<div>
+  <input type="text" id="search" placeholder="Search by Sr No or Asset Name" />
+  <button onclick="loadAssets()">Search</button>
+  <button onclick="addRow()">Add Row</button>
+</div>
+
+<div id="loadingIndicator" class="loading" style="display: none;">Loading...</div>
+
+<table id="assetTable">
+  <thead>
+    <tr>
+      <th>Sr No</th>
+      <th>Service Short Text</th>
+      <th>Plant Code</th>
+      <th>AMC From</th>
+      <th>AMC To</th>
+      <th>No. of Assets</th>
+      <th>Quantity</th>
+      <th>Unit Price</th>
+      <th>Total Cost</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  // Authentication functions
+  function getAuthToken() {
+    // Use the same token key as index.html
+    return localStorage.getItem('token');
+  }
+
+  function removeAuthToken() {
+    localStorage.removeItem('token');
+  }
+
+
+ function authenticatedFetch(url, options = {}) {
+    const token = getAuthToken();
+    
+    if (!token) {
+      console.error('No authentication token found');
+      redirectToLogin();
+      return Promise.reject(new Error('No authentication token found'));
+    }
+    
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+    
+    return fetch(url, { ...options, headers })
+      .then(response => {
+        if (response.status === 401 || response.status === 403) {
+          console.error('Authentication failed:', response.status);
+          handleAuthError();
+          throw new Error('Authentication failed');
+        }
+        return response;
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        if (error.message.includes('Authentication') || error.message.includes('Token')) {
+          handleAuthError();
+        }
+        throw error;
+      });
+  }
+
+  function handleAuthError() {
+    console.error('Authentication error detected');
+    removeAuthToken();
+    alert('Your session has expired. Please login again.');
+    redirectToLogin();
+  }
+
+  function redirectToLogin() {
+    window.location.href = '/login';
+  }
+
+  function checkAuthentication() {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('No authentication token found, redirecting to login');
+      redirectToLogin();
+      return false;
+    }
+    return true;
+  }
+
+  function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+      removeAuthToken();
+      redirectToLogin();
+    }
+  }
+
+  // Show/hide loading indicator
+  function showLoading(show = true) {
+    const indicator = document.getElementById('loadingIndicator');
+    indicator.style.display = show ? 'block' : 'none';
+  }
+
+  // Check authentication immediately
+  if (!checkAuthentication()) {
+    throw new Error('Authentication required');
+  }
+
+  // Main application code
+  const API = `${window.location.origin}/api/dashboard/assets`;
+  let originalData = {};
+  let modifiedRows = new Set();
+
+  async function loadAssets() {
+    try {
+      showLoading(true);
+      const q = document.getElementById('search').value || '';
+      console.log('Fetching from:', `${API}?q=${encodeURIComponent(q)}`);
+
+      const res = await authenticatedFetch(`${API}?q=${encodeURIComponent(q)}`);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      
+      const data = await res.json();
+      console.log('Returned from API:', data);
+
+      const tbody = document.querySelector('#assetTable tbody');
+      tbody.innerHTML = '';
+      originalData = {};
+      modifiedRows.clear();
+
+      function formatDate(input) {
+        if (!input) return '';
+        const date = new Date(input);
+        if (isNaN(date.getTime())) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      if (Array.isArray(data) && data.length > 0) {
+        data.forEach(asset => {
+          originalData[asset.sr_no] = { ...asset };
+          
+          const tr = document.createElement('tr');
+          tr.id = `row-${asset.sr_no}`;
+          tr.innerHTML = `
+            <td>${asset.sr_no}</td>
+            <td><input value="${asset.service_short_text || asset.main_line_short_text || ''}" onchange="markAsModified(${asset.sr_no}, 'service_short_text', this.value)" data-field="service_short_text"/></td>
+            <td><input value="${asset.plant_code || ''}" onchange="markAsModified(${asset.sr_no}, 'plant_code', this.value)" data-field="plant_code"/></td>
+            <td><input type="date" value="${formatDate(asset.amc_from)}" onchange="markAsModified(${asset.sr_no}, 'amc_from', this.value)" data-field="amc_from"/></td>
+            <td><input type="date" value="${formatDate(asset.amc_to)}" onchange="markAsModified(${asset.sr_no}, 'amc_to', this.value)" data-field="amc_to"/></td>
+            <td><input type="number" value="${asset.no_of_assets || asset.no_of_asset || 0}" onchange="markAsModified(${asset.sr_no}, 'no_of_assets', this.value)" data-field="no_of_assets"/></td>
+            <td><input type="number" value="${asset.quantity || 0}" onchange="markAsModified(${asset.sr_no}, 'quantity', this.value)" data-field="quantity"/></td>
+            <td><input type="number" step="0.01" value="${asset.unit_price || 0}" onchange="markAsModified(${asset.sr_no}, 'unit_price', this.value)" data-field="unit_price"/></td>
+            <td class="total-cost">${parseFloat((asset.quantity || 0) * (asset.unit_price || 0)).toFixed(2)}</td>
+            <td class="actions-cell">
+              <button class="save-btn" onclick="saveAsset(${asset.sr_no})" id="save-${asset.sr_no}" style="display: none;">Save</button>
+              <button class="delete-btn" onclick="deleteAsset(${asset.sr_no})">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No assets found</td></tr>';
+      }
+    } catch (error) {
+      console.error('Error loading assets:', error);
+      showFeedback('Error loading assets: ' + error.message, 'error');
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  function markAsModified(sr_no, field, value) {
+    const row = document.getElementById(`row-${sr_no}`);
+    const saveBtn = document.getElementById(`save-${sr_no}`);
+    
+    if (originalData[sr_no] && originalData[sr_no][field] != value) {
+      modifiedRows.add(sr_no);
+      row.classList.add('modified');
+      saveBtn.style.display = 'inline-block';
+    } else {
+      const inputs = row.querySelectorAll('input');
+      let hasChanges = false;
+      
+      inputs.forEach(input => {
+        const fieldName = input.dataset.field;
+        if (originalData[sr_no] && originalData[sr_no][fieldName] != input.value) {
+          hasChanges = true;
+        }
+      });
+      
+      if (!hasChanges) {
+        modifiedRows.delete(sr_no);
+        row.classList.remove('modified');
+        saveBtn.style.display = 'none';
+      }
+    }
+    
+    updateTotalCost(sr_no);
+  }
+
+  function updateTotalCost(sr_no) {
+    const row = document.getElementById(`row-${sr_no}`);
+    const quantityInput = row.querySelector('input[data-field="quantity"]');
+    const unitPriceInput = row.querySelector('input[data-field="unit_price"]');
+    const totalCostCell = row.querySelector('.total-cost');
+    
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const unitPrice = parseFloat(unitPriceInput.value) || 0;
+    const totalCost = quantity * unitPrice;
+    
+    totalCostCell.textContent = totalCost.toFixed(2);
+  }
+
+  async function saveAsset(sr_no) {
+    try {
+      const row = document.getElementById(`row-${sr_no}`);
+      const inputs = row.querySelectorAll('input');
+      const updates = {};
+      
+      inputs.forEach(input => {
+        const field = input.dataset.field;
+        if (field) {
+          updates[field] = input.value;
+        }
+      });
+      
+      console.log('Saving asset:', sr_no, updates);
+      
+      const res = await authenticatedFetch(`${API}/${sr_no}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to save asset');
+      }
+      
+      const updatedAsset = await res.json();
+      originalData[sr_no] = { ...updatedAsset };
+      modifiedRows.delete(sr_no);
+      row.classList.remove('modified');
+      document.getElementById(`save-${sr_no}`).style.display = 'none';
+      showFeedback('Asset saved successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving asset:', error);
+      showFeedback('Error saving asset: ' + error.message, 'error');
+    }
+  }
+
+  async function deleteAsset(sr_no) {
+    if (!confirm('Are you sure you want to delete this asset?')) return;
+    
+    try {
+      const res = await authenticatedFetch(`${API}/${sr_no}`, { method: 'DELETE' });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete asset');
+      }
+      
+      await loadAssets();
+      showFeedback('Asset deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+      showFeedback('Error deleting asset: ' + error.message, 'error');
+    }
+  }
+
+  async function addRow() {
+    const asset = {
+      main_line_short_text: 'New Asset',
+      plant_code: '0',
+      amc_from: '2024-01-01',
+      amc_to: '2024-12-31',
+      no_of_asset: 1,
+      quantity: 1,
+      unit_price: 0
+    };
+
+    try {
+      const res = await authenticatedFetch(API, {
+        method: 'POST',
+        body: JSON.stringify(asset)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to add asset');
+      }
+      
+      await loadAssets();
+      showFeedback('New asset added successfully!', 'success');
+    } catch (error) {
+      console.error('Error adding asset:', error);
+      showFeedback('Error adding asset: ' + error.message, 'error');
+    }
+  }
+
+  function showFeedback(message, type) {
+    const existingFeedback = document.querySelector('.feedback-message');
+    if (existingFeedback) {
+      existingFeedback.remove();
+    }
+    
+    const feedback = document.createElement('div');
+    feedback.className = 'feedback-message';
+    feedback.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      z-index: 1000;
+      background-color: ${type === 'success' ? '#28a745' : '#dc3545'};
+    `;
+    feedback.textContent = message;
+    
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+      feedback.remove();
+    }, 3000);
+  }
+
+  // Add enter key support for search
+  document.getElementById('search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      loadAssets();
+    }
+  });
+
+  // Load assets on page load
+  loadAssets();
+</script>
+</body>
+</html>
